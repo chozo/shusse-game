@@ -5,6 +5,8 @@
 
 公開URL: https://game.chozo.net/shusse-game/
 
+ソース: https://github.com/chozo/shusse-game
+
 外部ライブラリの読み込みも音声・画像の外部依存もなく、ビルドせずに `file://` のまま動く。
 
 ```bash
@@ -12,6 +14,31 @@ open index.html
 ```
 
 ローカルサーバで開くなら `python3 -m http.server 8000` 。
+
+## 現状
+
+**ゲームとしては完成。公開・デプロイ済み。**
+
+| | 状態 |
+|---|---|
+| 公開 | https://game.chozo.net/shusse-game/ （Cloudflare Workers） |
+| ソース | https://github.com/chozo/shusse-game （main ブランチ） |
+| テスト | `npm test` がすべて成功する状態 |
+
+残っている作業:
+
+- **`game.chozo.net` のトップページ（CHOZO GAMES のゲーム一覧）に本ゲームのリンクが無い。**
+  このページは別プロジェクトで管理されているため、このリポジトリからは対応できない
+
+### 開発に必要なもの
+
+- **Node.js** — テストとデプロイ（`npm test` / `npm run deploy`）
+- **Python 3** — 画像まわりの生成（`tools/build_assets.py` / `tools/build_favicon.py`）。
+  **標準ライブラリのみで動く**（PNG のデコード・エンコードを自前で実装しているため Pillow 等は不要）
+- ゲーム本体の実行には何も要らない。`index.html` を開くだけで動く
+
+`img/optimized/` と `js/stages.js` は生成物だが、クローンしてすぐ遊べるようコミットしている。
+`node_modules/` `dist/` `.wrangler/` `tools/debug/` は `.gitignore` で除外。
 
 ## 遊び方
 
@@ -162,18 +189,30 @@ favicon.png          64x64  タブ用（背景透過）
 apple-touch-icon.png 180x180 iOS ホーム画面用（背景不透明）
 css/style.css
 js/
-  config.js       調整値（盤面・物理・スコア・判定しきい値・役職名・音量）
-  stages.js       自動生成。ステージ定義と当たり判定ポリゴン
-  game.js         物理・出世・スコア・ゲームオーバー判定
-  render.js       Canvas 描画
-  sound.js        BGM・効果音（Web Audio で合成）
-  main.js         起動・入力・UI・画面遷移
-img/              元画像（配信しない）
-img/optimized/    自動生成。表示サイズの2倍に縮小した軽量版
-vendor/           matter.min.js（同梱）
-tools/            ビルドと検証（配信しない）
-wrangler.jsonc    Cloudflare Worker 設定
-dist/             自動生成。配信するファイルだけを集めたもの
+  config.js        調整値（盤面・物理・スコア・判定しきい値・役職名・音量）
+  stages.js        自動生成。ステージ定義と当たり判定ポリゴン
+  game.js          物理・出世・スコア・ゲームオーバー判定
+  render.js        Canvas 描画
+  sound.js         BGM・効果音（Web Audio で合成）
+  main.js          起動・入力・UI・画面遷移
+img/               元画像（配信しない）
+img/optimized/     自動生成。表示サイズの2倍に縮小した軽量版
+vendor/            matter.min.js（同梱）
+tools/
+  build_assets.py    元画像 → 当たり判定ポリゴン + 軽量画像
+  build_favicon.py   元画像 → ファビコン
+  build_dist.mjs     配信用 dist/shusse-game/ の組み立て
+  test.js            ルールの検証
+  dom_test.js        DOM スタブ上での通し実行
+  layout_check.mjs   端末ごとのレイアウトの検算
+  readme_check.mjs   README の記載と実装の突き合わせ
+  simulate.js        ランダムプレイの通し実行
+  tune.js            難易度の測定
+  snapshot.js        盤面の状態を JSON に書き出す
+  render_snapshot.py 盤面を PNG に合成する
+package.json       npm スクリプト（test / build / deploy）
+wrangler.jsonc     Cloudflare Worker 設定
+dist/              自動生成。配信するファイルだけを集めたもの
 ```
 
 ## 開発
@@ -209,10 +248,11 @@ python3 tools/build_favicon.py
 ブラウザ無しで動作を確認できる。
 
 ```bash
-npm test                     # 下記の3つをまとめて実行
+npm test                     # 下記の4つをまとめて実行
 node tools/test.js           # ルールの検証（判定ポリゴン・スコア・ゲームオーバー・抽選・撮影モード）
 node tools/dom_test.js       # DOM スタブ上で index.html 一式を実行するスモークテスト
 node tools/layout_check.mjs  # 端末ごとのレイアウトの収まりを検算
+node tools/readme_check.mjs  # README の数値・手順が実装と合っているかの突き合わせ
 
 SEARCH='?p=009' node tools/dom_test.js   # 撮影モードでの通し確認
 node tools/simulate.js 5     # ランダムプレイを5回通しで回す
@@ -242,9 +282,22 @@ python3 tools/render_snapshot.py --hitbox  # 当たり判定を重ねて出力
 キャラクターのサイズ自体は `tools/build_assets.py` の `BASE_RADIUS` と `GROWTH`
 （変更後は再生成が必要）。
 
+**盤面サイズを変えると難易度が大きく動く。** 縦長にするほど面積が増えて易しくなるので、
+`node tools/tune.js` で測ってから決めること。現在の 400×720 も、幅と高さの候補を振って
+ランダムプレイの平均スコアと到達役職が従来と揃う組み合わせを選んだもの
+（ランダムプレイで平均3,000点前後・到達007〜008・80秒程度が目安）。
+
 ## デプロイ
 
-Cloudflare Workers + Static Assets で配信している。
+Cloudflare Workers + Static Assets で配信している。**Cloudflare Pages ではない。**
+姉妹プロジェクト `001_shinkai-no-makoto`（深海の誠）と同じ方式で、
+ゲームごとに独立した Worker を `game.chozo.net` のパスにルーティングしている。
+
+| | |
+|---|---|
+| Worker 名は `shusse-game` | `wrangler.jsonc` の `name`。ローカルのディレクトリ名 `002_shusse-game` とは別 |
+| Cloudflare アカウント | matsudam@gmail.com |
+| 認証 | `npx wrangler whoami` で確認。切れていたら `npx wrangler login` |
 
 ```bash
 npm install     # 初回のみ
@@ -252,7 +305,7 @@ npm run deploy  # テスト → dist 生成 → wrangler deploy
 ```
 
 - `npm run build` が `dist/shusse-game/` を組み立てる。
-  **元画像 `img/*.png` と `tools/` は配信しない**（配信サイズ 1.27MB / 20ファイル）
+  **元画像 `img/*.png` と `tools/` は配信しない**（配信サイズ 1.32MB / 22ファイル）
 - ルートは `game.chozo.net/shusse-game` と `game.chozo.net/shusse-game/*` の2つ。
   スラッシュ無しのURLは Static Assets が 307 で `/shusse-game/` へ転送する
 - 全てのパスが相対参照なので、サブパス配信のための書き換えは不要
@@ -263,3 +316,11 @@ npm run deploy  # テスト → dist 生成 → wrangler deploy
 ## GitHub
 
 https://github.com/chozo/shusse-game
+
+```bash
+git add <更新したファイル>
+git commit -m "変更内容"
+git push
+```
+
+GitHub Organization `chozo` のリポジトリ。push には GitHub アカウント `matsudam` の権限を使う。
