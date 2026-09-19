@@ -158,6 +158,8 @@ BGM も効果音も **Web Audio API で合成**している。音声ファイル
 
 ```
 index.html
+favicon.png          64x64  タブ用（背景透過）
+apple-touch-icon.png 180x180 iOS ホーム画面用（背景不透明）
 css/style.css
 js/
   config.js       調整値（盤面・物理・スコア・判定しきい値・役職名・音量）
@@ -188,6 +190,19 @@ python3 tools/build_assets.py --debug  # あわせて tools/debug/ に凸包の�
 - 8bit の PNG（RGBA / RGB）に対応。**外部ライブラリ不要**（PNG のデコード・エンコードを標準ライブラリで実装）
 - アルファチャンネルが無い画像は、外周から近白色をたどって自動で白抜きする
 - `js/stages.js` と `img/optimized/` が更新される
+
+### ファビコン
+
+`img/001.png`（インターン）の頭部を正方形に切り出して生成する。
+
+```bash
+python3 tools/build_favicon.py
+```
+
+- 元画像は 170x247 の縦長なので、そのままでは正方形のファビコンにできない。頭部をクロップして使う
+- `apple-touch-icon.png` だけ背景を不透明にする。**iOS はホーム画面アイコンの透過部分を黒く塗る**ため
+- **サブパス配信なので `<link>` での明示が必須**。ブラウザが自動で探すのは
+  オリジン直下の `game.chozo.net/favicon.ico` で、そこは別プロジェクトの管轄
 
 ### 検証
 

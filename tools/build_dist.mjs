@@ -11,6 +11,8 @@ const OUT = join(ROOT, "dist", "shusse-game");
 // 配信するファイル・ディレクトリ
 const INCLUDE = [
   "index.html",
+  "favicon.png",
+  "apple-touch-icon.png",
   "css",
   "js",
   "vendor",

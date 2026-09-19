@@ -98,6 +98,16 @@ const checks = [
   ["進化図の高さも動的ビューポート基準", /dvh\)/.test(css)],
   ["横向きのスマホに縦向きの案内を出す", /@media \(orientation: landscape\)[^{]*\(pointer: coarse\)/.test(css)],
 ];
+
+// ファビコンはサブパス配信なので相対パスで明示する必要がある
+const html = readFileSync(join(ROOT, "index.html"), "utf8");
+checks.push(
+  ['ファビコンを相対パスで明示', /<link rel="icon"[^>]*href="favicon\.png"/.test(html)],
+  ['iOS のホーム画面アイコンを指定', /<link rel="apple-touch-icon"[^>]*href="apple-touch-icon\.png"/.test(html)],
+  ['ファビコンを配信対象に含める',
+    /"favicon\.png"/.test(readFileSync(join(ROOT, "tools/build_dist.mjs"), "utf8")) &&
+    /"apple-touch-icon\.png"/.test(readFileSync(join(ROOT, "tools/build_dist.mjs"), "utf8"))],
+);
 for (const [name, ok] of checks) {
   if (!ok) bad++;
   console.log(`  ${ok ? "OK  " : "NG  "}${name}`);
