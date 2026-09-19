@@ -1,0 +1,13 @@
+{
+  "name": "shusse-game",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node tools/build_dist.mjs",
+    "test": "node tools/test.js && node tools/dom_test.js && node tools/layout_check.mjs",
+    "deploy": "npm run test && npm run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.131.0"
+  }
+}

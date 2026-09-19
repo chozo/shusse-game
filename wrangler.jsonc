@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "shusse-game",
+  "compatibility_date": "2026-09-19",
+  "workers_dev": false,
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  // dist/shusse-game/ 以下が game.chozo.net/shusse-game/ に対応する
+  "assets": { "directory": "./dist" },
+  "routes": [
+    { "pattern": "game.chozo.net/shusse-game", "zone_name": "chozo.net" },
+    { "pattern": "game.chozo.net/shusse-game/*", "zone_name": "chozo.net" }
+  ]
+}

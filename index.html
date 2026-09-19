@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>出世ゲーム</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="rotate-note" id="rotate-note">
+  <p>画面を<b>縦向き</b>にしてください</p>
+</div>
+
+<div class="app" id="app" data-screen="title">
+
+  <header class="hud">
+    <div class="hud-stat">
+      <span class="hud-label">SCORE</span>
+      <span class="hud-value" id="score">0</span>
+    </div>
+    <h1 class="title">出世ゲーム</h1>
+    <div class="hud-stat hud-next">
+      <span class="hud-label">NEXT</span>
+      <img id="next-img" alt="次に落ちるキャラクター">
+    </div>
+  </header>
+
+  <div class="stage-wrap">
+    <canvas id="board" width="400" height="720"></canvas>
+    <div id="loading" class="loading">読み込み中…</div>
+
+    <div id="title" class="title-screen" hidden>
+      <div class="title-card">
+        <p class="title-logo">出世ゲーム</p>
+        <p class="title-lead">同じ役職どうしをぶつけて出世させよう</p>
+        <ol id="title-chart" class="title-chart"></ol>
+        <ul class="title-rules">
+          <li>落ちてくるのは <b>インターン 〜 課長</b> の4種類</li>
+          <li>同じ役職がぶつかると出世してスコア加算</li>
+          <li>赤い線を越えたままだとゲームオーバー</li>
+        </ul>
+        <p id="forced-note" class="forced-note" hidden></p>
+        <p id="audio-note" class="forced-note" hidden></p>
+        <button id="start" type="button">ゲーム開始</button>
+        <p class="title-best">ベスト <span id="title-best">0</span></p>
+      </div>
+    </div>
+    <div id="overlay" class="overlay" hidden>
+      <div class="overlay-card">
+        <p class="overlay-title">GAME OVER</p>
+        <p id="new-record" class="record" hidden>ハイスコア更新！</p>
+        <dl class="overlay-scores">
+          <div><dt>スコア</dt><dd id="final-score">0</dd></div>
+          <div><dt>ベスト</dt><dd id="final-best">0</dd></div>
+        </dl>
+        <button id="restart" type="button">もう一度</button>
+        <button id="to-title" class="link-button" type="button">トップに戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <div class="hud-stat">
+      <span class="hud-label">BEST</span>
+      <span class="hud-value" id="best">0</span>
+    </div>
+    <button id="mute" class="mute" type="button" aria-pressed="false" aria-label="音を消す">
+      <span id="mute-icon">♪</span>
+    </button>
+    <p class="hint"><span class="hint-touch">ドラッグで移動、指を離して落とす</span><span class="hint-key">ドラッグ / ← → で移動、クリック・タップ / Space で落とす<br>M キーで音のオン・オフ</span></p>
+  </footer>
+
+  <section class="chart-wrap">
+    <h2>出世の順番</h2>
+    <ol id="chart" class="chart"></ol>
+  </section>
+
+</div>
+
+<script src="vendor/matter.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/stages.js"></script>
+<script src="js/game.js"></script>
+<script src="js/render.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

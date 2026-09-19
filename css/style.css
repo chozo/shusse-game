@@ -1,0 +1,516 @@
+:root {
+  --ink: #22303f;
+  --ink-soft: #5d6f81;
+  --paper: #f4f1e8;
+  --panel: #ffffff;
+  --accent: #2b4a72;
+  --gold: #c9992e;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+/* hidden 属性を確実に効かせる。
+   UA の [hidden]{display:none} は作者スタイルの .overlay{display:flex} に負けるため、
+   この宣言が無いと hidden を付けたままオーバーレイが出っぱなしになる。 */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  /* アドレスバーの伸縮に追従する動的ビューポート。
+     100% だとアドレスバーを含んだ高さになり、スマホで必ず縦スクロールが出る */
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body {
+  background: linear-gradient(160deg, #e8eef5, #f4f1e8);
+  color: var(--ink);
+  font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 460px;   /* PC では盤面をこれ以上広げない */
+  height: 100%;
+  margin: 0 auto;
+  /* ホームバー・ノッチを避ける */
+  padding:
+    max(8px, env(safe-area-inset-top, 0px))
+    max(12px, env(safe-area-inset-right, 0px))
+    max(10px, env(safe-area-inset-bottom, 0px))
+    max(12px, env(safe-area-inset-left, 0px));
+}
+
+/* ---------------------------------------------------------- 横向きの案内 */
+
+/* 盤面が縦長（400:720）なので、横向きのスマホでは実用的な大きさにならない */
+.rotate-note { display: none; }
+
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  .rotate-note {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(160deg, #e8eef5, #f4f1e8);
+    color: var(--accent);
+    font-size: 17px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .app { visibility: hidden; }
+}
+
+/* ---------------------------------------------------------- HUD */
+
+.hud, .foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.hud-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 72px;
+}
+
+.hud-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+}
+
+.hud-value {
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.hud-next img {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+}
+
+.foot { align-items: flex-end; }
+
+.foot .hud-value { font-size: 18px; }
+
+.hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-align: right;
+  line-height: 1.5;
+}
+
+.hint-touch { display: none; }
+
+/* タッチ端末ではキーボードの説明を出さず、1行に収めて高さを節約する */
+@media (pointer: coarse) {
+  .hint-touch { display: inline; }
+  .hint-key { display: none; }
+}
+
+.mute {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(45, 60, 80, 0.18);
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--accent);
+  font-size: 17px;
+  line-height: 1;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.mute:hover { background: #fff; }
+
+.mute[aria-pressed="true"] {
+  color: var(--ink-soft);
+  opacity: 0.55;
+}
+
+/* ---------------------------------------------------------- 盤面 */
+
+.stage-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+}
+
+#board {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 400 / 720;
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(30, 45, 65, 0.18);
+  background: #dbe7f3;
+  touch-action: none;
+  cursor: pointer;
+  display: block;
+}
+
+.loading, .overlay, .title-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+}
+
+.loading {
+  background: rgba(244, 241, 232, 0.9);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.overlay { background: rgba(20, 32, 46, 0.55); }
+
+/* ---------------------------------------------------------- トップ画面 */
+
+.title-screen {
+  background: linear-gradient(165deg, #dbe7f3, #f4f1e8);
+}
+
+.title-card {
+  text-align: center;
+  padding: 20px 10px;
+  max-width: 100%;
+  max-height: 100%;
+  overflow-y: auto;   /* 画面が低いときに切れないように */
+}
+
+.title-logo {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+}
+
+.title-lead {
+  margin: 6px 0 18px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* 全役職の進化図。上段6枚・下段5枚に固定する。
+   flex-wrap 任せだと幅によって段組みが変わるため、行を明示的に分ける。 */
+.title-chart {
+  /* 画面幅に連続的に追従させる。段階的なブレークポイントだと
+     境目の幅で上段6枚がはみ出したり、逆に間隔が詰まったりする */
+  /* 幅だけでなく高さにも追従させる。3段あるので、縦が短い画面では
+     幅に余裕があってもカードが収まらなくなるため */
+  --chart-img: clamp(46px, min(17.5vw, 9dvh), 84px);
+  --chart-gap: clamp(14px, min(8vw, 4.2dvh), 38px);   /* イラスト間の空き。中央に矢印が入る */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0 0 18px;
+}
+
+.title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--chart-gap);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 項目は実サイズ。等幅分割にすると、名前の短い役職の列が余って
+   イラストと矢印の間隔が詰まってしまう。
+   flex-shrink を許して、狭い画面でもはみ出さないようにしておく。 */
+.title-row li {
+  position: relative;
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+/* 矢印は項目の先頭に付ける。下段の先頭にも付けて前段からの続きを示す */
+.title-row li + li::before,
+.title-row.continued li:first-child::before {
+  content: '▶';
+  position: absolute;
+  left: calc(var(--chart-gap) / -2);   /* 空きのちょうど中央 */
+  top: calc(var(--chart-img) / 2);
+  transform: translate(-50%, -50%);
+  color: var(--gold);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.title-row figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  max-width: 100%;
+}
+
+.title-row img {
+  height: var(--chart-img);
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.title-row figcaption {
+  font-size: clamp(9px, 2.5vw, 11px);
+  line-height: 1.25;
+  color: var(--ink-soft);
+  text-align: center;
+  /* keep-all にすると狭い端末で「インターン」が折り返せずはみ出す */
+  word-break: normal;
+}
+
+/* 落下してくる 001〜004 を目立たせる */
+.title-row li.droppable figcaption {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.title-row li:last-child figcaption {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+
+
+.title-rules {
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--ink);
+}
+
+.title-rules li::before {
+  content: '・';
+  color: var(--ink-soft);
+}
+
+.forced-note {
+  margin: 0 0 12px;
+  padding: 5px 12px;
+  display: inline-block;
+  border-radius: 999px;
+  background: rgba(201, 153, 46, 0.16);
+  color: #8a6a14;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+#start {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 44px;
+  font-size: 17px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #fff;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(43, 74, 114, 0.3);
+}
+
+#start:hover { background: #3a5f8c; }
+
+.title-best {
+  margin: 14px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+.title-best span { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.link-button {
+  display: block;
+  margin: 12px auto 0;
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 4px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-button:hover { color: var(--accent); }
+
+/* トップ画面ではスコアと NEXT を伏せる（配置は保つ） */
+.app[data-screen="title"] .hud-stat,
+.app[data-screen="title"] .hud-next { visibility: hidden; }
+
+.overlay-card {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 26px 34px;
+  text-align: center;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+}
+
+.overlay-title {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.record {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.overlay-scores {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin: 14px 0 20px;
+}
+
+.overlay-scores div { text-align: center; }
+.overlay-scores dt { font-size: 10px; letter-spacing: 0.12em; color: var(--ink-soft); }
+.overlay-scores dd {
+  margin: 2px 0 0;
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+#restart {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 11px 30px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #fff;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+#restart:hover { background: #3a5f8c; }
+
+/* ---------------------------------------------------------- 進化表 */
+
+.chart-wrap {
+  flex: 0 0 auto;
+  border-top: 1px solid rgba(45, 60, 80, 0.12);
+  padding-top: 10px;
+}
+
+.chart-wrap h2 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+}
+
+.chart li {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+}
+
+.chart img {
+  height: 26px;
+  width: auto;
+  opacity: 0.85;
+}
+
+.chart li:nth-child(n+5) img { height: 30px; }
+.chart li:nth-child(n+8) img { height: 34px; }
+.chart li:last-child img { height: 40px; opacity: 1; }
+
+@media (max-height: 760px), (max-width: 700px) {
+  .chart-wrap { display: none; }
+  .app { gap: 6px; }
+  .title { font-size: 15px; }
+  /* HUD を詰めたぶんだけ盤面が大きくなる */
+  .hud-value { font-size: 20px; }
+  .foot .hud-value { font-size: 15px; }
+  .hud-next img { height: 32px; }
+  .hud-stat { min-width: 60px; }
+  .mute { width: 32px; height: 32px; font-size: 15px; }
+  .hint { font-size: 10px; }
+  .title-logo { font-size: 28px; }
+  .title-lead { margin-bottom: 12px; }
+  .title-chart { gap: 8px; margin-bottom: 14px; }
+  .title-rules { line-height: 1.7; margin-bottom: 16px; }
+  .title-card { padding: 12px 6px; }
+  #start { padding: 12px 38px; }
+}
+
+/* これ以上低いと3段が収まらないので、説明文を落として詰める */
+@media (max-height: 640px) {
+  .title-logo { font-size: 24px; }
+  .title-lead { display: none; }
+  .title-rules { font-size: 11px; line-height: 1.6; margin-bottom: 12px; }
+  .title-best { margin-top: 10px; }
+}
