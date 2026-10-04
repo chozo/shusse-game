@@ -1,6 +1,7 @@
 {
   "name": "shusse-game",
   "version": "1.0.0",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "build": "node tools/build_dist.mjs",

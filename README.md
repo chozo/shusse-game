@@ -324,3 +324,7 @@ git push
 ```
 
 GitHub Organization `chozo` のリポジトリ。push には GitHub アカウント `matsudam` の権限を使う。
+
+## ライセンス
+
+[MIT License](./LICENSE)（Copyright (c) 2026 chozo）です。改変・再配布・商用利用ができます。利用するときは、著作権表示とライセンス文を残してください。
