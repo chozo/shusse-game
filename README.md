@@ -33,6 +33,7 @@ open index.html
 ### 開発に必要なもの
 
 - **Node.js** — テストとデプロイ（`npm test` / `npm run deploy`）
+- **Chrome** — OGP 画像の生成（`npm run ogp`）。playwright-core から使う
 - **Python 3** — 画像まわりの生成（`tools/build_assets.py` / `tools/build_favicon.py`）。
   **標準ライブラリのみで動く**（PNG のデコード・エンコードを自前で実装しているため Pillow 等は不要）
 - ゲーム本体の実行には何も要らない。`index.html` を開くだけで動く
@@ -185,8 +186,10 @@ BGM も効果音も **Web Audio API で合成**している。音声ファイル
 
 ```
 index.html
-favicon.png          64x64  タブ用（背景透過）
-apple-touch-icon.png 180x180 iOS ホーム画面用（背景不透明）
+public/            配信ルートの直下にそのまま置くファイル
+  favicon.png          64x64  タブ用（背景透過）
+  apple-touch-icon.png 180x180 iOS ホーム画面用（背景不透明）
+  ogp.png              1200x630 SNS 共有用の OGP 画像
 css/style.css
 js/
   config.js        調整値（盤面・物理・スコア・判定しきい値・役職名・音量）
@@ -210,7 +213,8 @@ tools/
   tune.js            難易度の測定
   snapshot.js        盤面の状態を JSON に書き出す
   render_snapshot.py 盤面を PNG に合成する
-package.json       npm スクリプト（test / build / deploy）
+  ogp/make-ogp.mjs   OGP 画像の生成（npm run ogp）
+package.json       npm スクリプト（test / build / deploy / ogp）
 wrangler.jsonc     Cloudflare Worker 設定
 dist/              自動生成。配信するファイルだけを集めたもの
 ```
@@ -242,6 +246,26 @@ python3 tools/build_favicon.py
 - `apple-touch-icon.png` だけ背景を不透明にする。**iOS はホーム画面アイコンの透過部分を黒く塗る**ため
 - **サブパス配信なので `<link>` での明示が必須**。ブラウザが自動で探すのは
   オリジン直下の `game.chozo.net/favicon.ico` で、そこは別プロジェクトの管轄
+- 生成先は `public/`。OGP 画像と同じ場所に置き、ビルドで配信ルートの直下にコピーする
+  （`https://game.chozo.net/shusse-game/favicon.png` で取れる）
+
+### OGP 画像
+
+SNS で共有したときに出る画像（`public/ogp.png`、1200×630）を作り直す。
+playwright-core とインストール済みの Chrome（ヘッドレス）を使う。
+
+```bash
+npm run ogp
+```
+
+1. ゲームを縦長の画面で開き、時計を止めて1コマずつ進める。確認用のフック（`window.__gameForTest`）で
+   ランダムな位置に 40 個落とし、盤面に 16 人以上いる状態で課長以上への出世が起きた直後を撮る
+2. 1200×630 の台紙に、撮った画面・タイトル・遊び方・出世の順番・URL・社長の絵を並べて撮る
+
+乱数と時計を固定しているので、毎回同じ画像になる（Playwright の `clock.install` だけだと時計が実時間で進むので、
+`clock.pauseAt` で止めてから `runFor` で進めている）。
+`index.html` には `og:*` と `twitter:card` のメタタグがあり、画像とページは絶対URL
+（`https://game.chozo.net/shusse-game/`）を指す。
 
 ### 検証
 
@@ -305,7 +329,8 @@ npm run deploy  # テスト → dist 生成 → wrangler deploy
 ```
 
 - `npm run build` が `dist/shusse-game/` を組み立てる。
-  **元画像 `img/*.png` と `tools/` は配信しない**（配信サイズ 1.32MB / 22ファイル）
+  **元画像 `img/*.png` と `tools/` は配信しない**（配信サイズ 1.82MB / 23ファイル）
+- `public/` の中身（ファビコンと OGP 画像）は `dist/shusse-game/` の直下に置く
 - ルートは `game.chozo.net/shusse-game` と `game.chozo.net/shusse-game/*` の2つ。
   スラッシュ無しのURLは Static Assets が 307 で `/shusse-game/` へ転送する
 - 全てのパスが相対参照なので、サブパス配信のための書き換えは不要

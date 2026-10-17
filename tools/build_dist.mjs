@@ -11,8 +11,6 @@ const OUT = join(ROOT, "dist", "shusse-game");
 // 配信するファイル・ディレクトリ
 const INCLUDE = [
   "index.html",
-  "favicon.png",
-  "apple-touch-icon.png",
   "css",
   "js",
   "vendor",
@@ -37,6 +35,13 @@ for (const rel of INCLUDE) {
   await mkdir(dirname(dst), { recursive: true });
   await cp(src, dst, { recursive: true, filter: (p) => !p.endsWith(".DS_Store") });
   console.log("  " + rel);
+}
+
+// public/（favicon.png・apple-touch-icon.png・ogp.png）は配信ルートの直下に置く
+for (const name of await readdir(join(ROOT, "public"))) {
+  if (name === ".DS_Store") continue;
+  await cp(join(ROOT, "public", name), join(OUT, name), { recursive: true });
+  console.log("  public/" + name);
 }
 
 const bytes = await totalSize(OUT);

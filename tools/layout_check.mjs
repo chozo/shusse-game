@@ -3,7 +3,7 @@
 //   node tools/layout_check.mjs
 //
 // 実機で目視できない代わりの検算なので、CSS を変えたら想定値も合わせること。
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -102,11 +102,13 @@ const checks = [
 // ファビコンはサブパス配信なので相対パスで明示する必要がある
 const html = readFileSync(join(ROOT, "index.html"), "utf8");
 checks.push(
-  ['ファビコンを相対パスで明示', /<link rel="icon"[^>]*href="favicon\.png"/.test(html)],
-  ['iOS のホーム画面アイコンを指定', /<link rel="apple-touch-icon"[^>]*href="apple-touch-icon\.png"/.test(html)],
-  ['ファビコンを配信対象に含める',
-    /"favicon\.png"/.test(readFileSync(join(ROOT, "tools/build_dist.mjs"), "utf8")) &&
-    /"apple-touch-icon\.png"/.test(readFileSync(join(ROOT, "tools/build_dist.mjs"), "utf8"))],
+  ['ファビコンを相対パスで明示', /<link rel="icon"[^>]*href="\.\/favicon\.png"/.test(html)],
+  ['iOS のホーム画面アイコンを指定', /<link rel="apple-touch-icon"[^>]*href="\.\/apple-touch-icon\.png"/.test(html)],
+  ['ファビコンと OGP 画像を public/ に置く',
+    ['favicon.png', 'apple-touch-icon.png', 'ogp.png'].every((f) => existsSync(join(ROOT, 'public', f)))],
+  ['public/ を配信対象に含める', /"public"/.test(readFileSync(join(ROOT, "tools/build_dist.mjs"), "utf8"))],
+  ['OGP のメタタグ', /<meta property="og:image" content="https:\/\/game\.chozo\.net\/shusse-game\/ogp\.png">/.test(html) &&
+    /<meta name="twitter:card" content="summary_large_image">/.test(html)],
 );
 for (const [name, ok] of checks) {
   if (!ok) bad++;

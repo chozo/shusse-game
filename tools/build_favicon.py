@@ -63,11 +63,11 @@ def main():
     square = crop_square(w, h, px, CROP_X, CROP_Y, CROP_SIDE)
 
     favicon = resize(CROP_SIDE, CROP_SIDE, square, 64, 64)
-    write_png(os.path.join(ROOT, "favicon.png"), 64, 64, favicon)
+    write_png(os.path.join(ROOT, "public", "favicon.png"), 64, 64, favicon)
     print("favicon.png           64x64   背景透過")
 
     touch = resize(CROP_SIDE, CROP_SIDE, square, 180, 180)
-    write_png(os.path.join(ROOT, "apple-touch-icon.png"), 180, 180, flatten(180, touch, BG))
+    write_png(os.path.join(ROOT, "public", "apple-touch-icon.png"), 180, 180, flatten(180, touch, BG))
     print("apple-touch-icon.png  180x180 背景不透明 rgb%s" % (BG,))
 
 
