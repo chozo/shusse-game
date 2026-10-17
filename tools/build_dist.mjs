@@ -37,7 +37,7 @@ for (const rel of INCLUDE) {
   console.log("  " + rel);
 }
 
-// public/（favicon.png・apple-touch-icon.png・ogp.png）は配信ルートの直下に置く
+// public/（favicon.png・ogp.png）は配信ルートの直下に置く
 for (const name of await readdir(join(ROOT, "public"))) {
   if (name === ".DS_Store") continue;
   await cp(join(ROOT, "public", name), join(OUT, name), { recursive: true });
